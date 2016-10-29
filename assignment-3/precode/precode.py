@@ -14,6 +14,7 @@ import collections
 import time
 import deciphercuda
 
+
 base_path = "."
 known = "but safe"
 
@@ -24,10 +25,9 @@ def main():
     """
     secret = generate_secret(1000, "this is secret, but safe")
     encrypted = encrypt_bytes(secret, "Z")
+
     start_time = time.time()
 
-    #Cuda test
-    #deciphercuda.decrypt_bytes(bytes_in, key)
 
     
     result = guess_password(3, encrypted, known)
@@ -82,7 +82,16 @@ def try_password(in_data, guess, known_part):
 
     returns -- True if the guess is correct, False otherwise
     """
-    decrypted = decrypt_bytes(in_data, guess)
+
+    #MD5 on guess
+    #ha = np.fromstring(hashlib.md5(guess).digest(), np.uint32)
+
+
+    #decrypted = decrypt_bytes(in_data, guess)
+    #Cuda test
+    #print guess
+    decrypted = deciphercuda.decrypt_bytes(in_data, guess)
+
     reconstructed = reconstruct_secret(decrypted)
     if(type(reconstructed) == bool):
         return False
@@ -122,8 +131,27 @@ def decrypt_bytes(bytes_in, key):
     key -- password to use to decrypt
     
     returns -- a new numpy array containing the decrypted data"""
+
     iv = np.array([1,2], dtype=np.uint32)
     ha = np.fromstring(hashlib.md5(key).digest(), np.uint32)
+
+    ############################################################
+    #f = open("cuda_kernel.cu", 'r')
+    # lineinfo used to enable assembly profiling in nvvp
+    #sm = pycuda.compiler.SourceModule(f.read(), options=['-lineinfo'])
+    #func = sm.get_function("decrypt_bytes")
+
+    #result = np.reshape(in_data, size*2)
+
+    # Copy data to and from the GPU, and call the function on it
+    # Grid and block size simplified here
+    #func(drv.InOut(result), drv.In(in_data), drv.In(guess), np.int32(size), block=(32,1,1), grid=(512/32,1,1))
+
+
+    #result = np.reshape(bytes_in, size)
+
+    ############################################################
+
 
     output = np.empty_like(bytes_in)
 
