@@ -1,25 +1,49 @@
+#include <stdio.h>
+
 __device__ void decipher(unsigned int, unsigned int*, unsigned int const*);
 
 
-__global__ void decrypt_bytes(unsigned int *decrypted, unsigned char *key, unsigned int *encrypted)
+__global__ void decrypt_bytes(unsigned int *decrypted, unsigned int *encrypted, unsigned char *key)
 {
+    //Get thread
     const int tx = threadIdx.x + (blockIdx.x * blockDim.x);
-    //finne ut hvordan man deler de opp paa traadene 
+    
     unsigned int deciphered[2];
     deciphered[0] = encrypted[0];
     deciphered[1] = encrypted[1];
     decipher(32, deciphered, (unsigned int*)key);
-    decrypted[0] = deciphered[0] ^ (unsigned int)1;
-    decrypted[1] = deciphered[1] ^ (unsigned int)2;
-    int i = tx; // 2;
+    
+    if (tx == 0)
+    {
+        decrypted[0] = deciphered[0] ^ (unsigned int)1;
+        decrypted[1] = deciphered[1] ^ (unsigned int)2;
+    }
+    
+    //divide work on threads
+    int i = (tx + 1) * 2;
     
     deciphered[0] = encrypted[i];
     deciphered[1] = encrypted[i+1];
+    
     decipher(32, deciphered, (unsigned int*)key);
     decrypted[i] = deciphered[0] ^ encrypted[i-2];
     decrypted[i+1] = deciphered[1] ^ encrypted[i-1];
-    i += 2;
 }   
+
+__global__ void reconstruct_secret(unsigned int *result, unsigned int *decrypted)
+{
+    /*
+    decrypted: pointer to the decrypted data
+    result: pointer to where to store the unshuffled data
+    */
+
+    //Get thread
+    const int tx = threadIdx.x + (blockIdx.x * blockDim.x);
+
+    unsigned int element = decrypted[tx];
+    result[(element >> 8) % 10000] = element & 0xff;
+}
+
 
 
 __device__ void decipher(unsigned int num_rounds, unsigned int v[2], unsigned int const key[4])
@@ -39,3 +63,5 @@ __device__ void decipher(unsigned int num_rounds, unsigned int v[2], unsigned in
     }
     v[0]=v0; v[1]=v1;
 }
+
+

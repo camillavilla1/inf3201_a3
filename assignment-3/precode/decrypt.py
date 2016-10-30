@@ -2,6 +2,8 @@
 
 import argparse
 import precode
+import time
+import cProfile, pstats, StringIO
 
 def main():
     parser = argparse.ArgumentParser(description='Encrypt a message with CBC XTEA')
@@ -19,10 +21,23 @@ def main():
         else:
             print("The password is incorrect")
     else:
+        pr = cProfile.Profile()
+        pr.enable()
+
+        time1 = time.time()
         result = precode.guess_password(args.l, encrypted, args.known)
+        time2 = time.time() - time1
+
+        pr.disable()
+        s = StringIO.StringIO()
+        sortby = 'cumulative'
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print s.getvalue()
+
         if(type(result) != bool):
-            print("Password found: " + result)
-    
+            print("Password found: " + result, "in ", time2, "seconds")
+        
 
 if __name__ == "__main__":
     main()

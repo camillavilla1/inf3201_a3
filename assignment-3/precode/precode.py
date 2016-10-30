@@ -25,11 +25,7 @@ def main():
     """
     secret = generate_secret(1000, "this is secret, but safe")
     encrypted = encrypt_bytes(secret, "Z")
-
     start_time = time.time()
-
-
-    
     result = guess_password(3, encrypted, known)
     end_time = time.time()
     print("The password is \"" + result + "\"\nTime taken (Python): " + str(end_time - start_time))
@@ -83,20 +79,19 @@ def try_password(in_data, guess, known_part):
     returns -- True if the guess is correct, False otherwise
     """
 
-    #MD5 on guess
-    #ha = np.fromstring(hashlib.md5(guess).digest(), np.uint32)
-
-
     #decrypted = decrypt_bytes(in_data, guess)
     #Cuda test
     #print guess
     decrypted = deciphercuda.decrypt_bytes(in_data, guess)
 
-    reconstructed = reconstruct_secret(decrypted)
+    #reconstructed = reconstruct_secret(decrypted)
+    reconstructed = deciphercuda.reconstruct_secret(decrypted)
+
+
     if(type(reconstructed) == bool):
         return False
     if(known_part in reconstructed.tostring()):
-         return True
+        return True
     else:
         return False
 
@@ -134,24 +129,6 @@ def decrypt_bytes(bytes_in, key):
 
     iv = np.array([1,2], dtype=np.uint32)
     ha = np.fromstring(hashlib.md5(key).digest(), np.uint32)
-
-    ############################################################
-    #f = open("cuda_kernel.cu", 'r')
-    # lineinfo used to enable assembly profiling in nvvp
-    #sm = pycuda.compiler.SourceModule(f.read(), options=['-lineinfo'])
-    #func = sm.get_function("decrypt_bytes")
-
-    #result = np.reshape(in_data, size*2)
-
-    # Copy data to and from the GPU, and call the function on it
-    # Grid and block size simplified here
-    #func(drv.InOut(result), drv.In(in_data), drv.In(guess), np.int32(size), block=(32,1,1), grid=(512/32,1,1))
-
-
-    #result = np.reshape(bytes_in, size)
-
-    ############################################################
-
 
     output = np.empty_like(bytes_in)
 
@@ -249,7 +226,6 @@ def decipher(num_rounds, input_data, key):
     num_rounds -- the number of iterations in the algorithm, 32 is reccomended
     input_data -- the input data to use, 32 bits of the first 2 elements are used
     key -- 128-bit key to use
-
 
 
     returns -- a numpy array containing the deciphered data"""

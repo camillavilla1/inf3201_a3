@@ -11,28 +11,37 @@ f = open("cuda_kernel.cu", 'r')
 # lineinfo used to enable assembly profiling in nvvp
 sm = pycuda.compiler.SourceModule(f.read(), options=['-lineinfo'])
 
+# Get function pointers from the source module
+func1 = sm.get_function("decrypt_bytes")
+func2 = sm.get_function("reconstruct_secret")
+
 
 def decrypt_bytes(bytes_in, key):
-	# Get a function pointer from the source module
-	func = sm.get_function("decrypt_bytes")
-
-	#WHAT SHOULD SIZE BE?????????????
 
 	size = 512;
 	ha = np.fromstring(hashlib.md5(key).digest(), np.uint32)
 
-	#lage result som empty
 	#Return a new array with the same shape and type as a given array.
 	result = np.empty_like(bytes_in)
 
-	# Reshaping for simplicity here, not really needed usually
-	#result = np.reshape(bytes_in, size)
 
 	# Copy data to and from the GPU, and call the function on it
-	func(drv.InOut(result), drv.In(bytes_in), drv.In(ha), block=(32,1,1), grid=(512/32,1,1))
+	func1(drv.InOut(result), drv.In(bytes_in), drv.In(ha), block=(size,1,1), grid=(10,1,1))
 
-
-	#result = np.reshape(bytes_in, size)
 	return result
 
 
+def reconstruct_secret(secret):
+	#secret -- the shuffled numpy array
+	
+	size = len(secret)
+
+	#result = np.empty_like(size)
+	result = np.empty_like(secret.astype(np.uint8))
+	#result = np.zeros_like(secret, dtype=np.float32)
+
+
+	func2(drv.InOut(result), drv.In(secret), block=(512,1,1), grid=(10,1,1))
+	#print result
+
+	return result
