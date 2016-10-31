@@ -17,7 +17,8 @@ func2 = sm.get_function("reconstruct_secret")
 
 
 def decrypt_bytes(bytes_in, key):
-
+	#bytes_in is pointer to data
+	
 	size = 512;
 	ha = np.fromstring(hashlib.md5(key).digest(), np.uint32)
 
@@ -33,15 +34,11 @@ def decrypt_bytes(bytes_in, key):
 
 def reconstruct_secret(secret):
 	#secret -- the shuffled numpy array
-	
 	size = len(secret)
 
-	#result = np.empty_like(size)
+	#Return a new array with the same shape and type as a given array.
 	result = np.empty_like(secret.astype(np.uint8))
-	#result = np.zeros_like(secret, dtype=np.float32)
 
-
-	func2(drv.InOut(result), drv.In(secret), block=(512,1,1), grid=(10,1,1))
-	#print result
+	func2(drv.InOut(result), drv.In(secret), block=(1024,1,1), grid=(10,1,1))
 
 	return result

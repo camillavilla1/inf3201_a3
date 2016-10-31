@@ -14,6 +14,10 @@ import collections
 import time
 import deciphercuda
 
+import pycuda.driver as cuda
+import pycuda.autoinit
+from pycuda.compiler import SourceModule
+
 
 base_path = "."
 known = "but safe"
@@ -52,7 +56,18 @@ def guess_password(max_length, in_data, known_part):
     known_part -- A part of the decoded data which is known (string)
 
     returns -- False or the correct guess
+
+
     """
+    # memcopy to cuda kernel to increase perfomance
+    #data = cuda.to_device(in_data)
+    #in_data_gpu = cuda.mem_alloc(in_data.nbytes)
+    #cuda.memcpy_htod(in_data_gpu, in_data)
+
+    #result = np.empty_like(in_data)
+    #result_done = numpy.empty_like(result)
+    #cuda.memcpy_dtoh(result_done, in_data_gpu)
+
 
     # This is a fairly silly way to do this
     # Must be changed for longer passwords to avoid running out of RAM
@@ -80,13 +95,12 @@ def try_password(in_data, guess, known_part):
     """
 
     #decrypted = decrypt_bytes(in_data, guess)
-    #Cuda test
-    #print guess
-    decrypted = deciphercuda.decrypt_bytes(in_data, guess)
-
     #reconstructed = reconstruct_secret(decrypted)
-    reconstructed = deciphercuda.reconstruct_secret(decrypted)
+    
+    #Cuda test
 
+    decrypted = deciphercuda.decrypt_bytes(in_data, guess)
+    reconstructed = deciphercuda.reconstruct_secret(decrypted)
 
     if(type(reconstructed) == bool):
         return False

@@ -30,7 +30,7 @@ __global__ void decrypt_bytes(unsigned int *decrypted, unsigned int *encrypted, 
     decrypted[i+1] = deciphered[1] ^ encrypted[i-1];
 }   
 
-__global__ void reconstruct_secret(unsigned int *result, unsigned int *decrypted)
+__global__ void reconstruct_secret(unsigned char *result, unsigned int *decrypted)
 {
     /*
     decrypted: pointer to the decrypted data
@@ -40,8 +40,13 @@ __global__ void reconstruct_secret(unsigned int *result, unsigned int *decrypted
     //Get thread
     const int tx = threadIdx.x + (blockIdx.x * blockDim.x);
 
-    unsigned int element = decrypted[tx];
-    result[(element >> 8) % 10000] = element & 0xff;
+    //Divide work on each thread, max 10000 threads
+    if (tx < 10000)
+    {
+        unsigned int element = decrypted[tx];
+        result[(element >> 8) % 10000] = element & 0xff;
+    }
+
 }
 
 
